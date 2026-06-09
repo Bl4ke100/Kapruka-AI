@@ -9,6 +9,13 @@ import ReactMarkdown from 'react-markdown';
 export default function ChatPage() {
   const [language, setLanguage] = useState('English');
   const { messages, sendMessage, status, error } = useChat();
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('chatLanguage');
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
   
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -44,7 +51,11 @@ export default function ChatPage() {
         <select 
           className={styles.languageSelect}
           value={language} 
-          onChange={(e) => setLanguage(e.target.value)}
+          onChange={(e) => {
+            const newLang = e.target.value;
+            localStorage.setItem('chatLanguage', newLang);
+            window.location.reload();
+          }}
         >
           <option value="English">English</option>
           <option value="Sinhala">Sinhala</option>
