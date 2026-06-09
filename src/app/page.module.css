@@ -1,0 +1,435 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+.header {
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 10;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span {
+  color: var(--primary);
+}
+
+.languageSelect {
+  background: var(--surface);
+  color: white;
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.languageSelect:focus {
+  border-color: var(--primary);
+}
+
+.chatArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  padding-bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  scroll-behavior: smooth;
+}
+
+.messageWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.messageUser {
+  align-items: flex-end;
+}
+
+.messageAssistant {
+  align-items: flex-start;
+}
+
+.messageContent {
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  max-width: 80%;
+  width: fit-content;
+  font-size: 1rem;
+  line-height: 1.6;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.messageUser .messageContent {
+  background: linear-gradient(135deg, var(--primary), #d05000);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.messageAssistant .messageContent {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+}
+
+.toolInvocation {
+  width: 100%;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.inputArea {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(to top, var(--background) 50%, transparent);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+
+.form {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  position: relative;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 1.2rem 4rem 1.2rem 1.5rem;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: white;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow), 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.sendButton {
+  position: absolute;
+  right: 0.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.sendButton:hover:not(:disabled) {
+  transform: scale(1.05);
+  background: #ff6a00;
+}
+
+.sendButton:disabled {
+  background: var(--secondary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.loadingIndicator {
+  display: flex;
+  gap: 4px;
+  padding: 0.5rem;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.searchAnimation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--primary-glow);
+  border-radius: 20px;
+  box-shadow: 0 0 15px var(--primary-glow);
+  color: var(--primary);
+  font-weight: 500;
+  animation: pulseSearch 2s infinite;
+}
+
+.searchIconWrapper {
+  animation: spinSlow 3s linear infinite;
+}
+
+@keyframes pulseSearch {
+  0% { box-shadow: 0 0 5px var(--primary-glow); }
+  50% { box-shadow: 0 0 20px var(--primary), inset 0 0 10px var(--primary-glow); }
+  100% { box-shadow: 0 0 5px var(--primary-glow); }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+/* Rich UI Components */
+
+.carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.5rem 0 1.5rem;
+  scroll-snap-type: x mandatory;
+}
+
+.productCard {
+  min-width: 260px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--glass-border);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+}
+
+.productImage {
+  height: 180px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.productImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.productInfo {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.productName {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.productPrice {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: auto;
+}
+
+.productStock {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.inStock { color: var(--success); }
+.outStock { color: var(--error); }
+
+.actionButton {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--secondary);
+  color: white;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.actionButton.primary {
+  background: var(--primary);
+}
+
+.actionButton:hover {
+  background: var(--border);
+}
+
+.actionButton.primary:hover {
+  background: #ff6a00;
+}
+
+.checkoutCard {
+  background: linear-gradient(145deg, var(--surface), var(--secondary));
+  border: 1px solid var(--primary-glow);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  text-align: center;
+}
+
+.checkoutCard h3 {
+  color: var(--text-main);
+  font-size: 1.25rem;
+}
+
+.checkoutCard p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.payLink {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px var(--primary-glow);
+}
+
+.payLink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px var(--primary-glow);
+}
+
+.deliveryCard {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.deliveryIcon {
+  color: var(--primary);
+  background: var(--primary-glow);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.deliveryDetails h4 {
+  margin-bottom: 0.25rem;
+}
+.deliveryDetails p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+  }
+  
+  .chatArea {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .messageContent {
+    max-width: 90%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .inputArea {
+    padding: 1rem;
+  }
+  
+  .input {
+    padding: 1rem 3.5rem 1rem 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .carousel {
+    padding-bottom: 1rem;
+  }
+  
+  .productCard {
+    min-width: 240px;
+    max-width: 240px;
+  }
+}
