@@ -107,8 +107,8 @@ export default function ChatPage() {
                     <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
                       <div className={styles.carousel}>
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {Array.isArray(result?.results) ? result.results.map((product: any) => (
-                          <div key={product.id} className={styles.productCard}>
+                        {Array.isArray(result?.results) ? result.results.map((product: any, index: number) => (
+                          <div key={product.id} className={styles.productCard} style={{ animationDelay: `${index * 75}ms` }}>
                             <div className={styles.productImage}>
                               {product.image_url ? (
                                 <img 
@@ -200,11 +200,18 @@ export default function ChatPage() {
                  return (
                    <div key={toolInvocation.toolCallId} className={`${styles.messageWrapper} ${styles.messageAssistant}`}>
                       {isSearching ? (
-                        <div className={styles.searchAnimation}>
-                          <div className={styles.searchIconWrapper}>
-                            <Search size={20} />
-                          </div>
-                          <span>Scanning catalog for the perfect items...</span>
+                        <div className={styles.carousel}>
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className={styles.skeletonCard} style={{ animationDelay: `${i * 100}ms` }}>
+                              <div className={styles.skeletonImage}></div>
+                              <div className={styles.skeletonInfo}>
+                                <div className={`${styles.skeletonText} ${styles.title}`}></div>
+                                <div className={styles.skeletonText}></div>
+                                <div className={`${styles.skeletonText} ${styles.price}`}></div>
+                                <div className={`${styles.skeletonText} ${styles.button}`}></div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className={styles.messageContent} style={{ opacity: 0.7, fontStyle: 'italic', display: 'flex', gap: '8px', alignItems: 'center' }}>

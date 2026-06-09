@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --background: #0a0a0c;
+  --background: #0a0a0a;
   --surface: #141417;
   --surface-elevated: rgba(25, 25, 30, 0.7);
   --primary: #f06000;
   --primary-glow: rgba(240, 96, 0, 0.4);
   --secondary: #242429;
   --text-main: #ffffff;
-  --text-muted: #a0a0a5;
+  --text-muted: #a3a3a3;
   --border: #2a2a30;
   --success: #10b981;
   --error: #ef4444;
-  --glass-bg: rgba(20, 20, 23, 0.6);
+  --glass-bg: rgba(15, 15, 15, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
 }
 
