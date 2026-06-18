@@ -83,13 +83,20 @@
   width: fit-content;
   font-size: 1rem;
   line-height: 1.6;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .messageUser .messageContent {
@@ -99,12 +106,12 @@
   border: 1px solid rgba(255, 180, 123, 0.3);
   box-shadow: inset 0 0 12px rgba(255, 126, 95, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
   color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   border-bottom-right-radius: 4px;
 }
 
 .messageAssistant .messageContent {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
   backdrop-filter: blur(20px) saturate(120%);
   -webkit-backdrop-filter: blur(20px) saturate(120%);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -122,8 +129,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .inputArea {
@@ -154,13 +166,13 @@
   color: white;
   font-size: 1rem;
   transition: all 0.2s ease;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-glow), 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 0 0 2px var(--primary-glow), 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .input::placeholder {
@@ -179,7 +191,7 @@
   border: 1px solid rgba(255, 180, 123, 0.3);
   box-shadow: inset 0 0 12px rgba(255, 126, 95, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
   color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,12 +223,25 @@
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
-.dot:nth-child(1) { animation-delay: -0.32s; }
-.dot:nth-child(2) { animation-delay: -0.16s; }
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
 }
 
 .searchAnimation {
@@ -238,14 +263,27 @@
 }
 
 @keyframes pulseSearch {
-  0% { box-shadow: 0 0 5px var(--primary-glow); }
-  50% { box-shadow: 0 0 20px var(--primary), inset 0 0 10px var(--primary-glow); }
-  100% { box-shadow: 0 0 5px var(--primary-glow); }
+  0% {
+    box-shadow: 0 0 5px var(--primary-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 20px var(--primary), inset 0 0 10px var(--primary-glow);
+  }
+
+  100% {
+    box-shadow: 0 0 5px var(--primary-glow);
+  }
 }
 
 @keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 
@@ -262,7 +300,7 @@
 .productCard {
   min-width: 260px;
   max-width: 260px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
   backdrop-filter: blur(20px) saturate(120%);
   -webkit-backdrop-filter: blur(20px) saturate(120%);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -278,14 +316,29 @@
 }
 
 @keyframes morph {
-  0% { border-radius: 16px; }
-  50% { border-radius: 20px 14px 22px 14px; }
-  100% { border-radius: 16px; }
+  0% {
+    border-radius: 16px;
+  }
+
+  50% {
+    border-radius: 20px 14px 22px 14px;
+  }
+
+  100% {
+    border-radius: 16px;
+  }
 }
 
 @keyframes fadeInScale {
-  0% { opacity: 0; transform: translateY(15px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .productCard:hover {
@@ -342,8 +395,13 @@
   margin-top: 0.25rem;
 }
 
-.inStock { color: var(--success); }
-.outStock { color: var(--error); }
+.inStock {
+  color: var(--success);
+}
+
+.outStock {
+  color: var(--error);
+}
 
 .actionButton {
   margin-top: 1rem;
@@ -363,7 +421,7 @@
   border: 1px solid rgba(255, 180, 123, 0.3);
   box-shadow: inset 0 0 12px rgba(255, 126, 95, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
   color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .actionButton:hover {
@@ -405,7 +463,7 @@
   border: 1px solid rgba(255, 180, 123, 0.3);
   box-shadow: inset 0 0 12px rgba(255, 126, 95, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
   color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   text-decoration: none;
   border-radius: 30px;
   font-weight: 600;
@@ -438,6 +496,7 @@
 .deliveryDetails h4 {
   margin-bottom: 0.25rem;
 }
+
 .deliveryDetails p {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -448,7 +507,7 @@
   .header {
     padding: 1rem;
   }
-  
+
   .chatArea {
     padding: 1rem;
     gap: 1rem;
@@ -459,20 +518,20 @@
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
   }
-  
+
   .inputArea {
     padding: 1rem;
   }
-  
+
   .input {
     padding: 1rem 3.5rem 1rem 1rem;
     font-size: 0.95rem;
   }
-  
+
   .carousel {
     padding-bottom: 1rem;
   }
-  
+
   .productCard {
     min-width: 240px;
     max-width: 240px;
@@ -529,6 +588,29 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.deliveryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.deliveryForm input {
+  padding: 12px 16px;
+  border-radius: 8px;
 }

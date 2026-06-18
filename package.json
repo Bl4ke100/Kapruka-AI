@@ -11,9 +11,9 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/openai": "^3.0.67",
-    "@ai-sdk/react": "^3.0.198",
+    "@ai-sdk/react": "^3.0.209",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "ai": "^6.0.196",
+    "ai": "^6.0.207",
     "lucide-react": "^1.17.0",
     "mcp-remote": "^0.1.38",
     "next": "16.2.7",
