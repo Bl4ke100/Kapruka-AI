@@ -2,18 +2,14 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { tool as aiTool, jsonSchema } from "ai";
 
-const globalForMcp = globalThis as unknown as {
-  mcpClient: Client | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  aiTools: Record<string, any> | null;
-};
-
 export async function getMcpClient() {
-  if (globalForMcp.mcpClient) return globalForMcp.mcpClient;
-  
   const transport = new StdioClientTransport({
     command: process.platform === "win32" ? "npx.cmd" : "npx",
-    args: ["mcp-remote", "https://mcp.kapruka.com/mcp"]
+    args: ["-y", "mcp-remote", "https://mcp.kapruka.com/mcp"],
+    env: {
+      ...process.env,
+      npm_config_cache: "/tmp/.npm" 
+    }
   });
   
   const client = new Client(
@@ -23,13 +19,10 @@ export async function getMcpClient() {
   );
   
   await client.connect(transport);
-  globalForMcp.mcpClient = client;
   return client;
 }
 
 export async function getKaprukaTools() {
-  if (globalForMcp.aiTools) return globalForMcp.aiTools;
-  
   const client = await getMcpClient();
   const { tools } = await client.listTools();
   
@@ -84,6 +77,5 @@ export async function getKaprukaTools() {
     });
   }
   
-  globalForMcp.aiTools = aiTools;
   return aiTools;
 }
