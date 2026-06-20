@@ -11,6 +11,11 @@ export default function ChatPage() {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [officialCities, setOfficialCities] = useState<string[]>([]);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [senderPhone, setSenderPhone] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
   const { messages, sendMessage, status, error } = useChat();
 
   useEffect(() => {
@@ -127,6 +132,38 @@ export default function ChatPage() {
                           Check Availability
                         </button>
                       </div>
+                    </div>
+                  )}
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient name') && m.id === messages[messages.length - 1].id && (
+                    <div className={styles.deliveryForm}>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>Finalize Order Details</h4>
+                      
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <input className={styles.input} placeholder="Recipient Name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder="Recipient Phone" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <input className={styles.input} placeholder="Sender Name" value={senderName} onChange={(e) => setSenderName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder="Sender Phone" value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                      </div>
+
+                      <textarea 
+                        className={styles.input} 
+                        placeholder="Gift Message (Optional)" 
+                        value={giftMessage} 
+                        onChange={(e) => setGiftMessage(e.target.value)} 
+                        style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
+                      />
+
+                      <button
+                        className={`${styles.actionButton} ${styles.primary}`}
+                        disabled={status === 'submitted' || status === 'streaming'}
+                        onClick={() => sendMessage({ text: `[ACTION: SUBMIT_ORDER_DETAILS] Recipient: ${recipientName} (${recipientPhone}) | Sender: ${senderName} (${senderPhone}) | Msg: ${giftMessage || 'None'}` }, { body: { language } })}
+                        style={{ marginTop: '4px' }}
+                      >
+                        {status === 'submitted' || status === 'streaming' ? 'Generating Secure Link...' : 'Generate Checkout Link'}
+                      </button>
                     </div>
                   )}
                 </div>
