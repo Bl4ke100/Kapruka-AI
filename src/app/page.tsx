@@ -122,7 +122,7 @@ export default function ChatPage() {
                         />
                         <button
                           className={`${styles.actionButton} ${styles.primary}`}
-                          onClick={() => sendMessage({ text: `${selectedCity}, ${selectedDate}` }, { body: { language } })}
+                          onClick={() => sendMessage({ text: `[ACTION: CHECK_DELIVERY] City: ${selectedCity} | Date: ${selectedDate}` }, { body: { language } })}
                         >
                           Check Availability
                         </button>
@@ -184,7 +184,10 @@ export default function ChatPage() {
                                 <button
                                   className={`${styles.actionButton} ${styles.primary}`}
                                   style={{ width: '100%', cursor: 'pointer' }}
-                                  onClick={() => sendMessage({ text: `[ACTION: SELECT_PRODUCT] Name: ${product.name}` }, { body: { language } })}
+                                  onClick={() => {
+                                    const targetId = product.id || product.product_id || product.item_id || product.sku;
+                                    sendMessage({ text: `[ACTION: SELECT_PRODUCT] Name: ${product.name} | ID: ${targetId}` }, { body: { language } });
+                                  }}
                                 >
                                   Select This Item
                                 </button>
@@ -199,15 +202,36 @@ export default function ChatPage() {
                   }
 
                   if (toolName === "kapruka_create_order") {
-                    if (result?.pay_link) {
+                    if (result?.error) {
+                      return (
+                        <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
+                          <div style={{ color: '#ff3333', padding: '1rem', border: '1px solid #ff3333', borderRadius: '8px', background: 'rgba(255, 51, 51, 0.1)' }}>
+                            ❌ Checkout failed: {result.details || result.message || "Please check server logs."}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const link = result?.pay_link || result?.checkout_url || result?.url || result?.payment_link;
+                    if (link) {
                       return (
                         <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
                           <div className={styles.checkoutCard}>
                             <h3>Order Created Successfully! 🎉</h3>
-                            <p>Your order #{result.order_number} is ready for payment.</p>
-                            <a href={result.pay_link} target="_blank" rel="noopener noreferrer" className={styles.payLink}>
+                            <p>Your order #{result?.order_number || result?.order_id || 'is pending'} is ready for payment.</p>
+                            <a href={link} target="_blank" rel="noopener noreferrer" className={styles.payLink}>
                               Complete Order on Kapruka
                             </a>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (toolInvocation.state === 'result') {
+                      return (
+                        <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
+                          <div style={{ color: '#ffaa00', padding: '1rem', border: '1px solid #ffaa00', borderRadius: '8px', background: 'rgba(255, 170, 0, 0.1)', overflowWrap: 'break-word' }}>
+                            ⚠️ Unexpected checkout response: {JSON.stringify(result)}
                           </div>
                         </div>
                       );
@@ -244,7 +268,7 @@ export default function ChatPage() {
                               />
                               <button
                                 className={`${styles.actionButton} ${styles.primary}`}
-                                onClick={() => sendMessage({ text: `${selectedCity}, ${selectedDate}` }, { body: { language } })}
+                                onClick={() => sendMessage({ text: `[ACTION: CHECK_DELIVERY] City: ${selectedCity} | Date: ${selectedDate}` }, { body: { language } })}
                               >
                                 Check Availability Again
                               </button>
@@ -269,7 +293,7 @@ export default function ChatPage() {
                         <button
                           className={`${styles.actionButton} ${styles.primary}`}
                           style={{ width: '100%', marginTop: '12px' }}
-                          onClick={() => sendMessage({ text: `Delivery looks good! What details do you need to finalize the order?` }, { body: { language } })}
+                          onClick={() => sendMessage({ text: `[ACTION: PROCEED_TO_CHECKOUT] Delivery confirmed.` }, { body: { language } })}
                         >
                           Proceed to Order Details
                         </button>
