@@ -101,8 +101,18 @@ export default function ChatPage() {
             <div key={m.id} className={`${styles.messageWrapper} ${m.role === 'user' ? styles.messageUser : styles.messageAssistant}`}>
               {typeof textToRender === 'string' && textToRender.trim() && (
                 <div className={styles.messageContent}>
-                  <ReactMarkdown>{textToRender}</ReactMarkdown>
-                  {m.role === 'assistant' && textToRender.toLowerCase().includes('delivery city') && (
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient') ? (
+                    /* If it's NOT the last message anymore, just show a clean summary in the history */
+                    m.id !== messages[messages.length - 1].id && (
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.8 }}>
+                        Requested order details...
+                      </div>
+                    )
+                  ) : (
+                    /* Otherwise, render normal text */
+                    <ReactMarkdown>{textToRender}</ReactMarkdown>
+                  )}
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('city') && textToRender.toLowerCase().includes('date') && m.id === messages[messages.length - 1].id && (
                     <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Confirm Delivery Details</h4>
                       <div className={styles.deliveryForm}>
@@ -134,7 +144,7 @@ export default function ChatPage() {
                       </div>
                     </div>
                   )}
-                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient name') && m.id === messages[messages.length - 1].id && (
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient') && m.id === messages[messages.length - 1].id && (
                     <div className={styles.deliveryForm}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>Finalize Order Details</h4>
                       
