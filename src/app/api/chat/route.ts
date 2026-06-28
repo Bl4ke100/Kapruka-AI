@@ -244,9 +244,9 @@ CRITICAL CHECKOUT RULE: The moment the user provides those final details, you MU
 
   let languageRule = "";
   if (language === "Sinhala") {
-    languageRule = "\n\nCRITICAL LANGUAGE RULE: You must respond to the user exclusively in Sinhala, using the Sinhala alphabet.";
-  } else if (language === "Tanglish") {
-    languageRule = "\n\nCRITICAL LANGUAGE RULE: You must respond to the user in Tanglish (conversational Sri Lankan English mixed with Tamil phrasing).";
+    languageRule = "\n\nCRITICAL LANGUAGE RULE: You must respond to the user exclusively in Sinhala, using the Sinhala alphabet. NEVER use literal, word-for-word robotic translations. Instead, use highly meaningful, culturally natural, and conversational Sinhala typical of friendly Sri Lankan customer service. Even for mandatory system phrases like 'Locating your order...', 'Checking delivery availability...', and 'Generating your secure Kapruka checkout link...', you MUST translate them into natural, conversational Sinhala.";
+  } else if (language === "Tamil" || language === "Tanglish") {
+    languageRule = "\n\nCRITICAL LANGUAGE RULE: You must respond to the user in Tanglish (conversational Sri Lankan English mixed with Tamil phrasing). NEVER use literal, word-for-word translations. Instead, use meaningful, culturally natural, and casual Tanglish expressions. Even for mandatory system phrases like 'Locating your order...', 'Checking delivery availability...', and 'Generating your secure Kapruka checkout link...', you MUST translate them into natural Tanglish.";
   }
 
   const finalSystemPrompt = system + languageRule;

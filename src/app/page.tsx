@@ -16,15 +16,27 @@ export default function ChatPage() {
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
-  const { messages, sendMessage, status, error } = useChat({
-    messages: [
+  const { messages, setMessages, sendMessage, status, error } = useChat();
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('chatLanguage') || 'English';
+    setLanguage(savedLanguage);
+    
+    let greetingText = "Hi! Welcome to Kapruka. Are you looking to buy something special today, or would you like to track an existing order?";
+    if (savedLanguage === 'Sinhala') {
+      greetingText = "ආයුබෝවන්! Kapruka වෙත සාදරයෙන් පිළිගනිමු. ඔබ අද විශේෂ යමක් මිලදී ගැනීමට බලාපොරොත්තු වෙනවාද, නැතහොත් ඔබට දැනටමත් ලබා දී ඇති ඇණවුමක් ලුහුබැඳීමට අවශ්‍යද?";
+    } else if (savedLanguage === 'Tamil' || savedLanguage === 'Tanglish') {
+      greetingText = "Hi! Kapruka-ku welcome. Iniku ungaluku special-a ethachu vaanganuma, illana unga existing order-a track panna numma?";
+    }
+
+    setMessages([
       {
         id: 'initial-greeting',
         role: 'assistant',
-        parts: [{ type: 'text', text: "Hi! Welcome to Kapruka. Are you looking to buy something special today, or would you like to track an existing order?" }]
+        parts: [{ type: 'text', text: greetingText }]
       } as UIMessage
-    ]
-  });
+    ]);
+  }, [setMessages]);
 
   useEffect(() => {
     fetch('/api/cities')
@@ -38,12 +50,6 @@ export default function ChatPage() {
       .catch(err => console.error("Failed to load cities", err));
   }, []);
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('chatLanguage');
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,6 +74,19 @@ export default function ChatPage() {
     sendMessage({ text: inputValue }, { body: { language } });
     setInputValue("");
   };
+  const t = {
+    confirmDelivery: language === 'Sinhala' ? "බෙදාහැරීමේ විස්තර තහවුරු කරන්න" : language === 'Tamil' ? "Delivery Details Confirm Pannunga" : "Confirm Delivery Details",
+    typeCity: language === 'Sinhala' ? "නගරය ටයිප් කරන්න හෝ තෝරන්න (උදා: කොළඹ)" : language === 'Tamil' ? "City type pannunga (eg: Colombo)" : "Type or select city (e.g., Colombo)",
+    checkAvail: language === 'Sinhala' ? "තිබේදැයි පරීක්ෂා කරන්න" : language === 'Tamil' ? "Availability Check Pannunga" : "Check Availability",
+    finalizeOrder: language === 'Sinhala' ? "ඇණවුම් විස්තර අවසන් කරන්න" : language === 'Tamil' ? "Order Details Finalize Pannunga" : "Finalize Order Details",
+    recipName: language === 'Sinhala' ? "ලබන්නාගේ නම" : language === 'Tamil' ? "Recipient Name" : "Recipient Name",
+    recipPhone: language === 'Sinhala' ? "ලබන්නාගේ දුරකථන අංකය" : language === 'Tamil' ? "Recipient Phone" : "Recipient Phone",
+    senderName: language === 'Sinhala' ? "යවන්නාගේ නම" : language === 'Tamil' ? "Sender Name" : "Sender Name",
+    senderPhone: language === 'Sinhala' ? "යවන්නාගේ දුරකථන අංකය" : language === 'Tamil' ? "Sender Phone" : "Sender Phone",
+    giftMsg: language === 'Sinhala' ? "තෑගි පණිවිඩය (අත්‍යවශ්‍ය නොවේ)" : language === 'Tamil' ? "Gift Message (Optional)" : "Gift Message (Optional)",
+    genLinkLoading: language === 'Sinhala' ? "ආරක්ෂිත සබැඳිය සකසමින්..." : language === 'Tamil' ? "Secure Link Generate aaguthu..." : "Generating Secure Link...",
+    genLink: language === 'Sinhala' ? "ගෙවීම් සබැඳිය සාදන්න" : language === 'Tamil' ? "Checkout Link Generate Pannunga" : "Generate Checkout Link",
+  };
 
   return (
     <div className={styles.container}>
@@ -87,7 +106,7 @@ export default function ChatPage() {
         >
           <option value="English">English</option>
           <option value="Sinhala">Sinhala</option>
-          <option value="Tanglish">Tanglish</option>
+          <option value="Tamil">Tamil</option>
         </select>
       </header>
 
@@ -122,12 +141,12 @@ export default function ChatPage() {
                   )}
                   {m.role === 'assistant' && textToRender.toLowerCase().includes('city') && textToRender.toLowerCase().includes('date') && m.id === messages[messages.length - 1].id && (
                     <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Confirm Delivery Details</h4>
+                      <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t.confirmDelivery}</h4>
                       <div className={styles.deliveryForm}>
                         <input
                           list="sri-lanka-cities"
                           className={styles.input}
-                          placeholder="Type or select city (e.g., Colombo)"
+                          placeholder={t.typeCity}
                           value={selectedCity}
                           onChange={(e) => setSelectedCity(e.target.value)}
                         />
@@ -147,28 +166,28 @@ export default function ChatPage() {
                           className={`${styles.actionButton} ${styles.primary}`}
                           onClick={() => sendMessage({ text: `[ACTION: CHECK_DELIVERY] City: ${selectedCity} | Date: ${selectedDate}` }, { body: { language } })}
                         >
-                          Check Availability
+                          {t.checkAvail}
                         </button>
                       </div>
                     </div>
                   )}
                   {m.role === 'assistant' && textToRender.toLowerCase().includes('sender') && textToRender.toLowerCase().includes('phone') && m.id === messages[messages.length - 1].id && (
                     <div className={styles.deliveryForm}>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>Finalize Order Details</h4>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>{t.finalizeOrder}</h4>
                       
                       <div style={{ display: 'flex', gap: '12px' }}>
-                        <input className={styles.input} placeholder="Recipient Name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
-                        <input className={styles.input} placeholder="Recipient Phone" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder={t.recipName} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder={t.recipPhone} value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
 
                       <div style={{ display: 'flex', gap: '12px' }}>
-                        <input className={styles.input} placeholder="Sender Name" value={senderName} onChange={(e) => setSenderName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
-                        <input className={styles.input} placeholder="Sender Phone" value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder={t.senderName} value={senderName} onChange={(e) => setSenderName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+                        <input className={styles.input} placeholder={t.senderPhone} value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
 
                       <textarea 
                         className={styles.input} 
-                        placeholder="Gift Message (Optional)" 
+                        placeholder={t.giftMsg} 
                         value={giftMessage} 
                         onChange={(e) => setGiftMessage(e.target.value)} 
                         style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
@@ -180,7 +199,7 @@ export default function ChatPage() {
                         onClick={() => sendMessage({ text: `[ACTION: SUBMIT_ORDER_DETAILS] Recipient: ${recipientName} (${recipientPhone}) | Sender: ${senderName} (${senderPhone}) | Msg: ${giftMessage || 'None'}` }, { body: { language } })}
                         style={{ marginTop: '4px' }}
                       >
-                        {status === 'submitted' || status === 'streaming' ? 'Generating Secure Link...' : 'Generate Checkout Link'}
+                        {status === 'submitted' || status === 'streaming' ? t.genLinkLoading : t.genLink}
                       </button>
                     </div>
                   )}
