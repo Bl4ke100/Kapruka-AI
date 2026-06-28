@@ -114,15 +114,20 @@ export async function POST(req: Request) {
     tools.kapruka_check_delivery.execute = async (args: any, context: any) => {
       console.log("[DELIVERY CHECK ARGS]:", args);
 
-      // Kapruka API schema strictly rejects extra properties like 'date'
       const sanitizedArgs = { ...args };
-      if (sanitizedArgs.date) delete sanitizedArgs.date;
+
+      // CRITICAL FIX: The SDK schema exposes 'date', but Kapruka strictly needs 'delivery_date'.
+      // We safely map it here so Gemini doesn't fail Zod validation!
+      if (sanitizedArgs.date && !sanitizedArgs.delivery_date) {
+        sanitizedArgs.delivery_date = sanitizedArgs.date;
+        delete sanitizedArgs.date; // Remove the invalid key before hitting Kapruka
+      }
 
       try {
         const rawResponse = await originalDeliveryExecute(sanitizedArgs, context);
         console.log("[MCP DELIVERY RAW RESPONSE]:", rawResponse);
         const result = rawResponse;
-        // The MCP server returns validation errors as strings
+        
         if (typeof result === 'string' && result.includes('Error')) {
           console.error("[TOOL VALIDATION ERROR]:", result);
           return { error: true, message: "Delivery check validation failed.", details: result };
@@ -144,8 +149,13 @@ export async function POST(req: Request) {
     const originalCheckoutExecute = tools.kapruka_create_order.execute;
     tools.kapruka_create_order.execute = async (args: any, context: any) => {
       try {
-        console.log("[CHECKOUT ARGS]:", args);
-        const res = await originalCheckoutExecute(args, context);
+        // CRITICAL FIX: Sanitize args to prevent Pydantic extra_forbidden errors
+        const sanitizedArgs = JSON.parse(JSON.stringify(args));
+        if (sanitizedArgs.sender?.phone) delete sanitizedArgs.sender.phone;
+        if (sanitizedArgs.params?.sender?.phone) delete sanitizedArgs.params.sender.phone;
+
+        console.log("[CHECKOUT ARGS]:", sanitizedArgs);
+        const res = await originalCheckoutExecute(sanitizedArgs, context);
         console.log("[MCP CHECKOUT RAW RESPONSE]:", res);
         return res;
       } catch (error) {
@@ -159,13 +169,34 @@ export async function POST(req: Request) {
     };
   }
 
+  // Tracking Tool Error Handler
+  if (tools.kapruka_track_order) {
+    const originalTrackExecute = tools.kapruka_track_order.execute;
+    tools.kapruka_track_order.execute = async (args: any, context: any) => {
+      try {
+        // Extract the ID regardless of what Gemini named the key to bypass Zod crashes
+        const rawId = args.order_id || args.order_number || args.id || (args.params ? Object.values(args.params)[0] : Object.values(args)[0]);
+        const sanitizedArgs = { params: { order_number: rawId } };
+
+        console.log("[TRACK ORDER ARGS]:", sanitizedArgs);
+        const res = await originalTrackExecute(sanitizedArgs, context);
+        console.log("[MCP TRACK RAW]:", res);
+        return res;
+      } catch (error) {
+        console.error("[TOOL ERROR]:", error);
+        return { error: true, message: "Failed to track." };
+      }
+    };
+  }
+
   const system = `# MISSION
 You are a minimalist, lightning-fast, and highly accurate AI shopping assistant for Kapruka (Sri Lanka's largest e-commerce platform). Your goal is to guide users to the perfect product and confidently trigger the interactive UI carousel using tools.
 
-CRITICAL STATE OVERRIDE: If the user's message starts with \`[ACTION: SELECT_PRODUCT]\`, THEY HAVE CHOSEN AN ITEM. You are STRICTLY FORBIDDEN from executing \`kapruka_search_products\`. Your ONLY permitted action is to reply with text asking for their Delivery City and Date. You MUST save the exact ID provided in that tag to use for the delivery and checkout tools.
-CRITICAL STATE OVERRIDE: If the user's message starts with \`[ACTION: CHECK_DELIVERY]\`, THEY HAVE PROVIDED DELIVERY DETAILS. You are STRICTLY FORBIDDEN from executing \`kapruka_search_products\`. Your ONLY permitted action is to instantly execute the \`kapruka_check_delivery\` tool silently. To get the required ID for this tool, use the exact ID that was provided in the \`[ACTION: SELECT_PRODUCT]\` tag in the chat history. You MUST use the exact parameter names: \`product_id\`, \`city\` (from this tag), and \`delivery_date\` (from this tag, strictly formatted as YYYY-MM-DD). NEVER use alternate keys like 'item_id' or 'date'.
-CRITICAL STATE OVERRIDE: If the user's message starts with \`[ACTION: PROCEED_TO_CHECKOUT]\`, the delivery is confirmed. YOU ARE STRICTLY FORBIDDEN from executing \`kapruka_check_delivery\` or \`kapruka_search_products\`. Your ONLY permitted action is to reply with standard text asking for the 3 final details: 1. Recipient Name & Phone, 2. Sender Name & Phone, 3. A short gift message. DO NOT execute any tools until you have all these details.
-CRITICAL STATE OVERRIDE: If the user's message starts with \`[ACTION: SUBMIT_ORDER_DETAILS]\`, THEY HAVE PROVIDED ALL FINAL ORDER DETAILS. Your ONLY permitted action is to instantly execute the \`kapruka_create_order\` tool silently. To get the required ID for this tool, use the exact ID that was provided in the \`[ACTION: SELECT_PRODUCT]\` tag in the chat history.
+CRITICAL STATE OVERRIDE 1 (SELECT): If the user's message starts with \`[ACTION: SELECT_PRODUCT]\`, they chose an item. You are STRICTLY FORBIDDEN from executing ANY tools (including \`kapruka_search_products\` or \`kapruka_get_product\`). Your ONLY action is to instantly reply with plain text asking for their Delivery City and Date. You MUST secretly save the exact ID provided in the tag.
+CRITICAL STATE OVERRIDE 2 (DELIVERY): If the user's message starts with \`[ACTION: CHECK_DELIVERY]\`, they gave delivery info. You are STRICTLY FORBIDDEN from being silent or executing search tools. You MUST reply with the exact text "Checking delivery availability..." AND instantly execute the \`kapruka_check_delivery\` tool using the \`product_id\` (from step 1), \`city\`, and \`delivery_date\` (YYYY-MM-DD).
+CRITICAL STATE OVERRIDE 3 (CHECKOUT): If the user's message starts with \`[ACTION: PROCEED_TO_CHECKOUT]\`, delivery is confirmed. You are STRICTLY FORBIDDEN from executing ANY tools. Your ONLY permitted action is to reply with standard text asking for the 3 final details: 1. Recipient Name & Phone, 2. Sender Name (ONLY name, no phone), 3. A short gift message.
+CRITICAL STATE OVERRIDE 4 (SUBMIT): If the user's message starts with \`[ACTION: SUBMIT_ORDER_DETAILS]\`, THEY HAVE PROVIDED ALL FINAL ORDER DETAILS. You are STRICTLY FORBIDDEN from being silent. You MUST reply with the exact text "Generating your secure Kapruka checkout link..." AND instantly execute the \`kapruka_create_order\` tool. To get the required ID for this tool, use the exact ID that was provided in the \`[ACTION: SELECT_PRODUCT]\` tag in the chat history.
+CRITICAL STATE OVERRIDE 5 (TRACKING): If the user asks to track an order but DOES NOT provide an order number, you are STRICTLY FORBIDDEN from executing any tools. Your ONLY action is to reply with text asking for the order number. If the user DOES provide an order number, you MUST reply with the exact text "Locating your order..." AND instantly execute the kapruka_track_order tool using that number.
 
 # MANDATORY CONVERSATIONAL WORKFLOW
 You must strictly follow this exact turn-by-turn sequence with the user. Do not skip steps.
@@ -181,12 +212,12 @@ You must strictly follow this exact turn-by-turn sequence with the user. Do not 
    - Execute \`kapruka_check_delivery\` to confirm delivery is possible and get the shipping rate.
 5. ORDER DETAILS: Once delivery is confirmed, ask the user for the final required details in one friendly message:
    - Recipient Name & Phone Number
-   - Sender Name & Phone Number
+   - Sender Name
    - A short Gift Message
 6. CHECKOUT EXECUTION: Once all details are gathered, explicitly state "Generating your secure Kapruka checkout link..." and instantly execute the \`kapruka_create_order\` tool.
    - NEVER output the raw URL in text. Rely on the frontend to render the payment button from your tool call.
 
-CRITICAL POST-DELIVERY RULE: When the \`kapruka_check_delivery\` tool returns a successful result, you MUST NOT just confirm the delivery and stop. In the EXACT SAME MESSAGE where you confirm delivery is possible, you MUST proactively ask the user for: 1. Recipient Name & Phone, 2. Sender Name & Phone, 3. A short gift message.
+CRITICAL POST-DELIVERY RULE: When the \`kapruka_check_delivery\` tool returns a successful result, you MUST NOT just confirm the delivery and stop. In the EXACT SAME MESSAGE where you confirm delivery is possible, you MUST proactively ask the user for: 1. Recipient Name & Phone, 2. Sender Name, 3. A short gift message.
 
 CRITICAL CHECKOUT RULE: The moment the user provides those final details, you MUST immediately execute the \`kapruka_create_order\` tool. Do not ask for further confirmation. Execute the tool and tell the user you are generating their payment link.
 
@@ -227,6 +258,7 @@ CRITICAL CHECKOUT RULE: The moment the user provides those final details, you MU
     messages: recentMessages,
     system: finalSystemPrompt,
     tools,
+    maxSteps: 5, // CRITICAL: Forces the server to execute the tracking tool
   });
 
   return result.toUIMessageStreamResponse();

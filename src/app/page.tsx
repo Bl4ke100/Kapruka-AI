@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat, type UIMessage } from "@ai-sdk/react";
-import { Send, ShoppingBag, Sparkles, Truck, Package, Search } from "lucide-react";
+import { Send, ShoppingBag, Sparkles, Truck, Package, Search, PackageCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import ReactMarkdown from 'react-markdown';
@@ -16,7 +16,15 @@ export default function ChatPage() {
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
-  const { messages, sendMessage, status, error } = useChat();
+  const { messages, sendMessage, status, error } = useChat({
+    messages: [
+      {
+        id: 'initial-greeting',
+        role: 'assistant',
+        parts: [{ type: 'text', text: "Hi! Welcome to Kapruka. Are you looking to buy something special today, or would you like to track an existing order?" }]
+      } as UIMessage
+    ]
+  });
 
   useEffect(() => {
     fetch('/api/cities')
@@ -101,7 +109,7 @@ export default function ChatPage() {
             <div key={m.id} className={`${styles.messageWrapper} ${m.role === 'user' ? styles.messageUser : styles.messageAssistant}`}>
               {typeof textToRender === 'string' && textToRender.trim() && (
                 <div className={styles.messageContent}>
-                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient') ? (
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('sender') && textToRender.toLowerCase().includes('phone') ? (
                     /* If it's NOT the last message anymore, just show a clean summary in the history */
                     m.id !== messages[messages.length - 1].id && (
                       <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.8 }}>
@@ -144,7 +152,7 @@ export default function ChatPage() {
                       </div>
                     </div>
                   )}
-                  {m.role === 'assistant' && textToRender.toLowerCase().includes('recipient') && m.id === messages[messages.length - 1].id && (
+                  {m.role === 'assistant' && textToRender.toLowerCase().includes('sender') && textToRender.toLowerCase().includes('phone') && m.id === messages[messages.length - 1].id && (
                     <div className={styles.deliveryForm}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>Finalize Order Details</h4>
                       
@@ -366,6 +374,43 @@ export default function ChatPage() {
                       );
                     }
                   }
+
+                  if (toolName === "kapruka_track_order") {
+                    if (result?.error) {
+                      return (
+                        <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
+                          <div style={{ color: '#ff3333', padding: '1rem', border: '1px solid #ff3333', borderRadius: '8px', background: 'rgba(255, 51, 51, 0.1)' }}>
+                            ❌ Tracking failed: {result.details || result.message || "Could not find that order. Please check the order number."}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
+                        <div className={styles.deliveryCard} style={{ flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div className={styles.deliveryIcon} style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
+                              <PackageCheck size={24} />
+                            </div>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Order Status</h4>
+                              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Order #{result?.order_id || toolInvocation.args?.order_id || toolInvocation.args?.order_number || 'Unknown'}</p>
+                            </div>
+                          </div>
+                          
+                          <div style={{ width: '100%', background: 'rgba(255, 255, 255, 0.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                              Status: {result?.status || result?.order_status || result?.state || 'Processing'}
+                            </p>
+                            {result?.delivery_date && <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>Delivery Date: {result.delivery_date}</p>}
+                            {result?.recipient && <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>Recipient: {typeof result.recipient === 'object' ? (result.recipient.name || result.recipient.recipient_name || JSON.stringify(result.recipient)) : result.recipient}</p>}
+                            {result?.message && <p style={{ margin: '4px 0', fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--text-muted)' }}>"{result.message}"</p>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
                 } else if (toolInvocation.state === "call" || toolInvocation.state === "partial-call" || toolInvocation.state === "input-streaming" || toolInvocation.state === "input-available") {
                   const isSearching = toolName === 'kapruka_search_products';
                   return (
@@ -389,7 +434,8 @@ export default function ChatPage() {
                           <Search size={16} />
                           {toolName === 'kapruka_check_delivery' ? 'Checking delivery...' :
                             toolName === 'kapruka_create_order' ? 'Creating order...' :
-                              'Processing...'}
+                              toolName === 'kapruka_track_order' ? 'Tracking order...' :
+                                'Processing...'}
                         </div>
                       )}
                     </div>
