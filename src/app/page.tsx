@@ -1,12 +1,14 @@
 "use client";
 
 import { useChat, type UIMessage } from "@ai-sdk/react";
-import { Send, ShoppingBag, Sparkles, Truck, Package, Search, PackageCheck } from "lucide-react";
+import { Send, ShoppingBag, Sparkles, Truck, Package, Search, PackageCheck, Sun, Moon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import ReactMarkdown from 'react-markdown';
 
 export default function ChatPage() {
+  const [chatStarted, setChatStarted] = useState(false);
+  const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('English');
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -21,22 +23,11 @@ export default function ChatPage() {
   useEffect(() => {
     const savedLanguage = localStorage.getItem('chatLanguage') || 'English';
     setLanguage(savedLanguage);
-    
-    let greetingText = "Hi! Welcome to Kapruka. Are you looking to buy something special today, or would you like to track an existing order?";
-    if (savedLanguage === 'Sinhala') {
-      greetingText = "ආයුබෝවන්! Kapruka වෙත සාදරයෙන් පිළිගනිමු. ඔබ අද විශේෂ යමක් මිලදී ගැනීමට බලාපොරොත්තු වෙනවාද, නැතහොත් ඔබට දැනටමත් ලබා දී ඇති ඇණවුමක් ලුහුබැඳීමට අවශ්‍යද?";
-    } else if (savedLanguage === 'Tamil' || savedLanguage === 'Tanglish') {
-      greetingText = "Hi! Kapruka-ku welcome. Iniku ungaluku special-a ethachu vaanganuma, illana unga existing order-a track panna numma?";
-    }
 
-    setMessages([
-      {
-        id: 'initial-greeting',
-        role: 'assistant',
-        parts: [{ type: 'text', text: greetingText }]
-      } as UIMessage
-    ]);
-  }, [setMessages]);
+    const savedTheme = localStorage.getItem('appTheme') || 'dark';
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
 
   useEffect(() => {
     fetch('/api/cities')
@@ -68,6 +59,50 @@ export default function ChatPage() {
     return () => resizeObserver.disconnect();
   }, []);
 
+  const toggleTheme = (e: React.MouseEvent) => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+
+    // @ts-ignore - View Transitions API
+    if (!document.startViewTransition) {
+      setTheme(newTheme);
+      localStorage.setItem('appTheme', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      return;
+    }
+
+    const x = e.clientX;
+    const y = e.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    // @ts-ignore
+    const transition = document.startViewTransition(() => {
+      setTheme(newTheme);
+      localStorage.setItem('appTheme', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+
+      document.documentElement.animate(
+        {
+          clipPath: clipPath
+        },
+        {
+          duration: 500,
+          easing: "ease-in-out",
+          pseudoElement: "::view-transition-new(root)"
+        }
+      );
+    });
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || status === 'submitted' || status === 'streaming') return;
@@ -92,31 +127,68 @@ export default function ChatPage() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.logo}>
-          <ShoppingBag size={24} color="var(--primary)" />
+          <img src="/KaprukaAI_Logo.png" width={40} height={40} />
           Kapruka<span>AI</span>
         </div>
-        <select
-          className={styles.languageSelect}
-          value={language}
-          onChange={(e) => {
-            const newLang = e.target.value;
-            localStorage.setItem('chatLanguage', newLang);
-            window.location.reload();
-          }}
-        >
-          <option value="English">English</option>
-          <option value="Sinhala">Sinhala</option>
-          <option value="Tamil">Tamil</option>
-        </select>
+        <div className={styles.headerControls}>
+          <select
+            className={styles.languageSelect}
+            value={language}
+            onChange={(e) => {
+              const newLang = e.target.value;
+              localStorage.setItem('chatLanguage', newLang);
+              window.location.reload();
+            }}
+          >
+            <option value="English">English</option>
+            <option value="Sinhala">Sinhala</option>
+            <option value="Tamil">Tamil</option>
+          </select>
+          <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+        </div>
       </header>
 
       <main className={styles.chatArea} ref={chatAreaRef}>
-        {messages.length === 0 && (
-          <div style={{ textAlign: 'center', marginTop: '10vh', color: 'var(--text-muted)' }}>
-            <Sparkles size={48} style={{ marginBottom: '1rem', color: 'var(--primary)', opacity: 0.8 }} />
-            <h1 style={{ color: 'white', marginBottom: '0.5rem' }}>Welcome to Kapruka AI</h1>
-            <p>I can help you find products, check delivery, and create orders.</p>
-            <p>Try saying: &quot;Find me a chocolate cake&quot;</p>
+        {!chatStarted && (
+          <div style={{ textAlign: 'center', marginTop: '15vh', color: 'var(--text-muted)' }}>
+            <img src="/KaprukaAI_Logo.png" width={80} height={80} style={{ marginBottom: '1.5rem' }} />
+            <h1 style={{ color: 'var(--text-main)', marginBottom: '1rem', fontSize: '2.5rem' }}>Welcome to Kapruka AI</h1>
+            <p style={{ fontSize: '1.1rem', marginBottom: '2.5rem' }}>I can help you find products, check delivery, track orders, and complete your purchase securely.</p>
+            <button
+              onClick={() => {
+                setChatStarted(true);
+
+                let greetingText = "Hi! Welcome to Kapruka. Are you looking to buy something special today, or would you like to track an existing order?";
+                if (language === 'Sinhala') {
+                  greetingText = "ආයුබෝවන්! Kapruka වෙත සාදරයෙන් පිළිගනිමු. ඔබ අද විශේෂ යමක් මිලදී ගැනීමට බලාපොරොත්තු වෙනවාද, නැතහොත් ඔබට දැනටමත් ලබා දී ඇති ඇණවුමක් ලුහුබැඳීමට අවශ්‍යද?";
+                } else if (language === 'Tamil' || language === 'Tanglish') {
+                  greetingText = "Hi! Kapruka-ku welcome. Iniku ungaluku special-a ethachu vaanganuma, illana unga existing order-a track panna numma?";
+                }
+                setMessages([{
+                  id: 'initial-greeting',
+                  role: 'assistant',
+                  parts: [{ type: 'text', text: greetingText }]
+                } as UIMessage]);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #f06000 0%, #ff8c42 100%)',
+                color: 'white',
+                padding: '1rem 2.5rem',
+                borderRadius: '30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(240, 96, 0, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(240, 96, 0, 0.6)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(240, 96, 0, 0.4)'; }}
+            >
+              Chat with Kapruka AI
+            </button>
           </div>
         )}
 
@@ -174,22 +246,22 @@ export default function ChatPage() {
                   {m.role === 'assistant' && textToRender.toLowerCase().includes('sender') && textToRender.toLowerCase().includes('phone') && m.id === messages[messages.length - 1].id && (
                     <div className={styles.deliveryForm}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text)' }}>{t.finalizeOrder}</h4>
-                      
-                      <div style={{ display: 'flex', gap: '12px' }}>
+
+                      <div className={styles.inputRow}>
                         <input className={styles.input} placeholder={t.recipName} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                         <input className={styles.input} placeholder={t.recipPhone} value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px' }}>
+                      <div className={styles.inputRow}>
                         <input className={styles.input} placeholder={t.senderName} value={senderName} onChange={(e) => setSenderName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                         <input className={styles.input} placeholder={t.senderPhone} value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
 
-                      <textarea 
-                        className={styles.input} 
-                        placeholder={t.giftMsg} 
-                        value={giftMessage} 
-                        onChange={(e) => setGiftMessage(e.target.value)} 
+                      <textarea
+                        className={styles.input}
+                        placeholder={t.giftMsg}
+                        value={giftMessage}
+                        onChange={(e) => setGiftMessage(e.target.value)}
                         style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
                       />
 
@@ -318,7 +390,7 @@ export default function ChatPage() {
                         <div key={toolInvocation.toolCallId} className={styles.toolInvocation}>
                           <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                             <p style={{ color: 'var(--text)', marginBottom: '16px', lineHeight: '1.5' }}>
-                              Oops! I couldn't find <strong>{toolInvocation.args?.city}</strong> in Kapruka's delivery database. They require exact zone names (for example, "Colombo 01" instead of "Colombo 1"). <br/><br/>Could you please try selecting your city directly from the dropdown list below?
+                              Oops! I couldn't find <strong>{toolInvocation.args?.city}</strong> in Kapruka's delivery database. They require exact zone names (for example, "Colombo 01" instead of "Colombo 1"). <br /><br />Could you please try selecting your city directly from the dropdown list below?
                             </p>
                             <div className={styles.deliveryForm}>
                               <input
@@ -417,7 +489,7 @@ export default function ChatPage() {
                               <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Order #{result?.order_id || toolInvocation.args?.order_id || toolInvocation.args?.order_number || 'Unknown'}</p>
                             </div>
                           </div>
-                          
+
                           <div style={{ width: '100%', background: 'rgba(255, 255, 255, 0.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 'bold', color: 'var(--primary)' }}>
                               Status: {result?.status || result?.order_status || result?.state || 'Processing'}
@@ -486,20 +558,22 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className={styles.inputArea}>
-        <form onSubmit={handleFormSubmit} className={styles.form}>
-          <input
-            className={styles.input}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="What are you looking for?"
-            disabled={status === 'submitted' || status === 'streaming'}
-          />
-          <button type="submit" className={styles.sendButton} disabled={(status === 'submitted' || status === 'streaming') || !inputValue.trim()}>
-            <Send size={18} />
-          </button>
-        </form>
-      </div>
+      {chatStarted && (
+        <div className={styles.inputArea}>
+          <form onSubmit={handleFormSubmit} className={styles.form}>
+            <input
+              className={styles.input}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="What are you looking for?"
+              disabled={status === 'submitted' || status === 'streaming'}
+            />
+            <button type="submit" className={styles.sendButton} disabled={(status === 'submitted' || status === 'streaming') || !inputValue.trim()}>
+              <Send size={18} />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
