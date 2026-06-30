@@ -18,8 +18,14 @@ export async function POST(req: Request) {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const messages = rawMessages.reduce((acc: any[], msg: any) => {
     if (msg.role === 'user' || msg.role === 'system') {
-      const textContent = msg.content || (msg.parts?.find((p: any) => p.type === 'text')?.text) || "";
-      acc.push({ role: msg.role, content: textContent });
+      // CRITICAL FIX: If the message contains an image, pass the raw parts array to Gemini
+      if (msg.parts && msg.parts.some((p: any) => p.type === 'image')) {
+        acc.push({ role: msg.role, content: msg.parts });
+      } else {
+        // Otherwise, extract the plain text normally
+        const textContent = msg.content || (msg.parts?.find((p: any) => p.type === 'text')?.text) || "";
+        acc.push({ role: msg.role, content: textContent });
+      }
     } else if (msg.role === 'assistant') {
       // ONLY look for completed tool results to prevent Gemini 400 errors
       const toolResults = msg.toolInvocations?.filter((t: any) => t.state === 'result') || [];
@@ -127,7 +133,7 @@ export async function POST(req: Request) {
         const rawResponse = await originalDeliveryExecute(sanitizedArgs, context);
         console.log("[MCP DELIVERY RAW RESPONSE]:", rawResponse);
         const result = rawResponse;
-        
+
         if (typeof result === 'string' && result.includes('Error')) {
           console.error("[TOOL VALIDATION ERROR]:", result);
           return { error: true, message: "Delivery check validation failed.", details: result };
@@ -157,6 +163,13 @@ export async function POST(req: Request) {
         console.log("[CHECKOUT ARGS]:", sanitizedArgs);
         const res = await originalCheckoutExecute(sanitizedArgs, context);
         console.log("[MCP CHECKOUT RAW RESPONSE]:", res);
+
+        // CRITICAL FIX: Catch FastMCP string errors
+        if (typeof res === 'string' && res.toLowerCase().includes('error')) {
+          console.error("[TOOL VALIDATION ERROR]:", res);
+          return { error: true, message: "Order creation failed. Tell the user what went wrong and ask for the missing details.", details: res };
+        }
+
         return res;
       } catch (error) {
         console.error("[TOOL ERROR] kapruka_create_order:", error);
@@ -195,18 +208,19 @@ You are a minimalist, lightning-fast, and highly accurate AI shopping assistant 
 CRITICAL STATE OVERRIDE 1 (SELECT): If the user's message starts with \`[ACTION: SELECT_PRODUCT]\`, they chose an item. You are STRICTLY FORBIDDEN from executing ANY tools (including \`kapruka_search_products\` or \`kapruka_get_product\`). Your ONLY action is to instantly reply with plain text asking for their Delivery City and Date. You MUST secretly save the exact ID provided in the tag.
 CRITICAL STATE OVERRIDE 2 (DELIVERY): If the user's message starts with \`[ACTION: CHECK_DELIVERY]\`, they gave delivery info. You are STRICTLY FORBIDDEN from being silent or executing search tools. You MUST reply with the exact text "Checking delivery availability..." AND instantly execute the \`kapruka_check_delivery\` tool using the \`product_id\` (from step 1), \`city\`, and \`delivery_date\` (YYYY-MM-DD).
 CRITICAL STATE OVERRIDE 3 (CHECKOUT): If the user's message starts with \`[ACTION: PROCEED_TO_CHECKOUT]\`, delivery is confirmed. You are STRICTLY FORBIDDEN from executing ANY tools. Your ONLY permitted action is to reply with standard text asking for the 3 final details: 1. Recipient Name & Phone, 2. Sender Name (ONLY name, no phone), 3. A short gift message.
-CRITICAL STATE OVERRIDE 4 (SUBMIT): If the user's message starts with \`[ACTION: SUBMIT_ORDER_DETAILS]\`, THEY HAVE PROVIDED ALL FINAL ORDER DETAILS. You are STRICTLY FORBIDDEN from being silent. You MUST reply with the exact text "Generating your secure Kapruka checkout link..." AND instantly execute the \`kapruka_create_order\` tool. To get the required ID for this tool, use the exact ID that was provided in the \`[ACTION: SELECT_PRODUCT]\` tag in the chat history.
+CRITICAL STATE OVERRIDE 4 (SUBMIT): If the user's message starts with [ACTION: SUBMIT_ORDER_DETAILS], THEY HAVE PROVIDED ALL FINAL ORDER DETAILS. You are STRICTLY FORBIDDEN from being silent. You MUST reply with the exact text "Generating your secure Kapruka checkout link..." AND instantly execute the [kapruka_create_order] tool. To get the required ID for this tool, use the exact ID that was provided in the [ACTION: SELECT_PRODUCT] tag in the chat history. CRITICAL: You must extract the Sender Email and Special Instructions from the ACTION payload and pass them to the tool (use the exact values provided, do not use guest@kapruka.com or defaults). If the kapruka_create_order tool returns an error, you MUST stop and reply in plain text, explaining exactly what is missing or invalid, and ask the user to provide it.
 CRITICAL STATE OVERRIDE 5 (TRACKING): If the user asks to track an order but DOES NOT provide an order number, you are STRICTLY FORBIDDEN from executing any tools. Your ONLY action is to reply with text asking for the order number. If the user DOES provide an order number, you MUST reply with the exact text "Locating your order..." AND instantly execute the kapruka_track_order tool using that number.
 
 # MANDATORY CONVERSATIONAL WORKFLOW
 You must strictly follow this exact turn-by-turn sequence with the user. Do not skip steps.
 
 1. WELCOME: Greet the user casually and ask what they are looking for.
-2. GATHER REQUIREMENTS: Once the user states an interest, DO NOT search yet. You must first ask for the specific details needed to make a good recommendation:
+2. GATHER REQUIREMENTS: Once the user states a general interest (via text), DO NOT search yet. You must first ask for the specific details needed to make a good recommendation:
    - Who is the recipient? (e.g., Mom, friend, kid)
    - What is the specific occasion? (e.g., Mother's Day, birthday)
    - What is their maximum budget in LKR? (e.g., 10,000 LKR)
-3. THE SEARCH TRIGGER: Only after the user provides these details, state exactly one sentence confirming you are searching (e.g., "Looking for the perfect art gifts for your mom within 10,000 LKR now..."). Then, immediately execute the \`kapruka_search_products\` tool.
+   (CRITICAL EXCEPTION: If the user provides an image, SKIP THIS STEP ENTIRELY. Describe the image and search immediately).
+3. THE SEARCH TRIGGER: Only after the user provides these details (or immediately if an image was provided), state exactly one sentence confirming you are searching (e.g., "Looking for the perfect art gifts for your mom within 10,000 LKR now..."). Then, immediately execute the \`kapruka_search_products\` tool.
 4. SELECTION & DELIVERY CHECK: When the user selects a product from the carousel, immediately ask for their Delivery City and Date.
    - Use \`kapruka_list_delivery_cities\` if you need to resolve a vernacular city name.
    - Execute \`kapruka_check_delivery\` to confirm delivery is possible and get the shipping rate.
@@ -240,7 +254,8 @@ CRITICAL CHECKOUT RULE: The moment the user provides those final details, you MU
 # BOUNDARIES & SCOPE
 - You are strictly a shopping agent for Kapruka. 
 - If the user asks about completely unrelated topics (e.g., coding, complex math, global politics), politely decline and gently steer them back to finding a gift or product on Kapruka.
-- Support casual English, Tanglish, and Sinhala if initiated by the user.`;
+- Support casual English, Tanglish, and Sinhala if initiated by the user.
+- CRITICAL VISUAL SEARCH RULE: If the user provides an image, you MUST act as a visual search engine. Analyze the image to identify the core product (e.g. "red rose bouquet", "chocolate drip cake", "cashew jar"). Instantly reply with a short text acknowledging what you see (e.g., "I see a beautiful chocolate drip cake! Let me find similar ones for you..."), and then execute the "kapruka_search_products" tool using the exact descriptive keywords you extracted from the image`;
 
   let languageRule = "";
   if (language === "Sinhala") {

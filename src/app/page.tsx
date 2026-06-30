@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat, type UIMessage } from "@ai-sdk/react";
-import { Send, ShoppingBag, Sparkles, Truck, Package, Search, PackageCheck, Sun, Moon } from "lucide-react";
+import { Send, ShoppingBag, Sparkles, Truck, Package, Search, PackageCheck, Sun, Moon, Paperclip } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import ReactMarkdown from 'react-markdown';
@@ -15,8 +15,11 @@ export default function ChatPage() {
   const [officialCities, setOfficialCities] = useState<string[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const { messages, setMessages, sendMessage, status, error } = useChat();
 
@@ -101,6 +104,26 @@ export default function ChatPage() {
         }
       );
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      sendMessage({
+        role: 'user',
+        content: 'Find something like this on Kapruka',
+        parts: [
+          { type: 'text', text: 'Find something like this on Kapruka' },
+          { type: 'image', image: base64String }
+        ]
+      } as any, { body: { language } }); // The "as any" shuts TypeScript up
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -195,11 +218,20 @@ export default function ChatPage() {
         {messages.map((m: UIMessage) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const textToRender = (m.parts?.find((p: any) => p.type === 'text') as any)?.text || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const imageToRender = (m.parts?.find((p: any) => p.type === 'image') as any)?.image;
 
           return (
             <div key={m.id} className={`${styles.messageWrapper} ${m.role === 'user' ? styles.messageUser : styles.messageAssistant}`}>
-              {typeof textToRender === 'string' && textToRender.trim() && (
+              {(textToRender.trim() || imageToRender) && (
                 <div className={styles.messageContent}>
+                  {imageToRender && (
+                    <img 
+                      src={imageToRender} 
+                      alt="Uploaded product" 
+                      style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: textToRender ? '12px' : '0', display: 'block' }} 
+                    />
+                  )}
                   {m.role === 'assistant' && textToRender.toLowerCase().includes('sender') && textToRender.toLowerCase().includes('phone') ? (
                     /* If it's NOT the last message anymore, just show a clean summary in the history */
                     m.id !== messages[messages.length - 1].id && (
@@ -252,10 +284,21 @@ export default function ChatPage() {
                         <input className={styles.input} placeholder={t.recipPhone} value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
 
+                      <input 
+                        className={styles.input} 
+                        placeholder="Full Delivery Address" 
+                        value={deliveryAddress} 
+                        onChange={(e) => setDeliveryAddress(e.target.value)} 
+                        style={{ width: '100%', marginBottom: '12px' }} 
+                      />
+
                       <div className={styles.inputRow}>
                         <input className={styles.input} placeholder={t.senderName} value={senderName} onChange={(e) => setSenderName(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                         <input className={styles.input} placeholder={t.senderPhone} value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
                       </div>
+
+                      <input className={styles.input} placeholder="Sender Email (Optional)" value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} style={{ width: '100%', marginBottom: '12px' }} />
+                      <textarea className={styles.input} placeholder="Special Instructions (Optional)" value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} style={{ resize: 'vertical', width: '100%', marginBottom: '12px' }} />
 
                       <textarea
                         className={styles.input}
@@ -268,7 +311,7 @@ export default function ChatPage() {
                       <button
                         className={`${styles.actionButton} ${styles.primary}`}
                         disabled={status === 'submitted' || status === 'streaming'}
-                        onClick={() => sendMessage({ text: `[ACTION: SUBMIT_ORDER_DETAILS] Recipient: ${recipientName} (${recipientPhone}) | Sender: ${senderName} (${senderPhone}) | Msg: ${giftMessage || 'None'}` }, { body: { language } })}
+                        onClick={() => sendMessage({ text: `[ACTION: SUBMIT_ORDER_DETAILS] Recipient: ${recipientName} (${recipientPhone}) | Address: ${deliveryAddress} | Sender: ${senderName} (${senderPhone}) | Email: ${senderEmail || 'None'} | Special Instructions: ${specialInstructions || 'None'} | Msg: ${giftMessage || 'None'}` }, { body: { language } })}
                         style={{ marginTop: '4px' }}
                       >
                         {status === 'submitted' || status === 'streaming' ? t.genLinkLoading : t.genLink}
@@ -561,6 +604,7 @@ export default function ChatPage() {
       {chatStarted && (
         <div className={styles.inputArea}>
           <form onSubmit={handleFormSubmit} className={styles.form}>
+            <input type="file" accept="image/*" id="imageUpload" style={{ display: 'none' }} onChange={handleImageUpload} />
             <input
               className={styles.input}
               value={inputValue}
@@ -568,6 +612,14 @@ export default function ChatPage() {
               placeholder="What are you looking for?"
               disabled={status === 'submitted' || status === 'streaming'}
             />
+            <button 
+              type="button" 
+              className={styles.uploadButton}
+              onClick={() => document.getElementById('imageUpload')?.click()}
+              disabled={status === 'submitted' || status === 'streaming'}
+            >
+              <Paperclip size={20} />
+            </button>
             <button type="submit" className={styles.sendButton} disabled={(status === 'submitted' || status === 'streaming') || !inputValue.trim()}>
               <Send size={18} />
             </button>
