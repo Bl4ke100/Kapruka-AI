@@ -236,14 +236,15 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f06000 0%, #ff8c42 100%);
+  background: var(--primary);
   border: none;
-  box-shadow: 0 4px 12px rgba(240, 96, 0, 0.4);
+  box-shadow: 0 4px 12px var(--primary-glow);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .uploadButton {
@@ -258,13 +259,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
 .uploadButton:hover:not(:disabled) {
   color: var(--primary);
   background: var(--surface-elevated);
+  transform: scale(1.05);
 }
 
 .uploadButton:disabled {
@@ -274,13 +276,15 @@
 
 .sendButton:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(240, 96, 0, 0.6);
+  box-shadow: 0 6px 16px var(--primary-glow);
 }
 
 .sendButton:disabled {
   background: var(--secondary);
   color: var(--text-muted);
+  box-shadow: none;
   cursor: not-allowed;
+  transform: scale(1);
 }
 
 .loadingIndicator {

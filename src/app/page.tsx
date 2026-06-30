@@ -597,7 +597,7 @@ export default function ChatPage() {
 
       {error && (
         <div style={{ color: 'var(--error)', textAlign: 'center', padding: '0.5rem', fontSize: '0.9rem' }}>
-          Error: {error.message || 'Failed to fetch response. Did you forget to add your GOOGLE_GENERATIVE_AI_API_KEY to .env.local?'}
+          Error: {error.message || 'Failed to fetch response.GOOGLE_GENERATIVE_AI_API_KEY is missing'}
         </div>
       )}
 
